@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Allstones AB Chatbot</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    #chat-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #0c9;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+
+    #chat-container {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      width: 350px;
+      max-height: 500px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 999;
+    }
+
+    #chat-header {
+      background: #f4f4f4;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #chat-header img {
+      height: 28px;
+    }
+
+    #chat {
+      padding: 10px;
+      overflow-y: auto;
+      flex-grow: 1;
+      scroll-behavior: smooth;
+    }
+
+    .bot, .user {
+      margin: 6px 0;
+      padding: 8px 12px;
+      border-radius: 12px;
+      max-width: 80%;
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    .bot {
+      background: #e6f4ea;
+      color: #1a7f37;
+      border: 1px solid #b4dfc4;
+    }
+
+    .user {
+      background: #e0ebff;
+      color: #0041c4;
+      border: 1px solid #b3ccf7;
+      align-self: flex-end;
+    }
+
+    #input {
+      border: none;
+      border-top: 1px solid #ddd;
+      padding: 10px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+<button id="chat-toggle">💬</button>
+
+<div id="chat-container">
+  <div id="chat-header">
+    <img src="https://raw.githubusercontent.com/enayat3012/allstones-chatbot-final/main/logo_resized%20(1).png" alt="Logo" />
+    <strong>Allstones Chat</strong>
+  </div>
+  <div id="chat">
+    <div class="bot">👋 Welcome to Allstones AB!</div>
+    <div class="bot">How can I help you today?</div>
+  </div>
+  <input id="input" placeholder="Type your answer here..." />
+</div>
+
+<script>
+  const toggle = document.getElementById("chat-toggle");
+  const container = document.getElementById("chat-container");
+  toggle.onclick = () => {
+    container.style.display = container.style.display === "flex" ? "none" : "flex";
+  };
+
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("input");
+  let stage = 0;
+  const data = {};
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxeclpooMJo3rucR-hqoWiiuKN3vNlBYnjCwqakwJsrZLI8l4AgRHwqrZh9uiuAkrlBgA/exec";
+
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      const val = this.value.trim();
+      if (!val) return;
+
+      const msg = document.createElement("div");
+      msg.className = "user";
+      msg.textContent = val;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+
+      this.value = "";
+
+      if (stage === 0) {
+        data.init = val;
+        setTimeout(() => {
+          chat.innerHTML += '<div class="bot">Are you a <strong>Company</strong> or an <strong>Individual</strong>?</div>';
+          chat.scrollTop = chat.scrollHeight;
+        }, 300);
+        stage = 1;
+      } else if (stage === 1) {
+        data.user_type = val.toLowerCase();
+        if (data.user_type === "company") {
+          chat.innerHTML += `<div class="bot">Please enter your company name.</div>`;
+        } else {
+          chat.innerHTML += `<div class="bot">Please enter your full name.</div>`;
+        }
+        chat.scrollTop = chat.scrollHeight;
+        stage = 2;
+      } else if (stage === 2) {
+        data.name = val;
+        chat.innerHTML += `<div class="bot">Thanks! Please enter your phone number (with country code, e.g. +46...)</div>`;
+        chat.scrollTop = chat.scrollHeight;
+        stage = 3;
+      } else if (stage === 3) {
+        if (!val.startsWith("+") || val.length < 10) {
+          chat.innerHTML += `<div class="bot">❌ Please enter a valid phone number with country code.</div>`;
+          chat.scrollTop = chat.scrollHeight;
+          return;
+        }
+        data.phone = val;
+        chat.innerHTML += `<div class="bot">Great! Now, please enter your email address.</div>`;
+        chat.scrollTop = chat.scrollHeight;
+        stage = 4;
+      } else if (stage === 4) {
+        data.email = val;
+        chat.innerHTML += `<div class="bot">✅ Thank you! Our sales representatives will contact you shortly.</div>`;
+        input.disabled = true;
+
+        fetch(scriptURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }).then(res => {
+          if (!res.ok) {
+            chat.innerHTML += `<div class="bot">❌ Failed to save data.</div>`;
+          }
+        });
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
